@@ -60,6 +60,8 @@ def execute_nm(processing_dir,
                batch_size,
                memory,
                duration,
+               alg='blr',
+               account=None,
                normative_path=None,
                func='estimate',
                interactive=False,
@@ -110,6 +112,7 @@ def execute_nm(processing_dir,
     cluster_spec = kwargs.pop('cluster_spec', 'torque')
     log_path = kwargs.get('log_path', None)
     binary = kwargs.pop('binary', False)
+    alg = kwargs.pop('alg',alg)
 
     split_nm(processing_dir,
              respfile_path,
@@ -157,6 +160,7 @@ def execute_nm(processing_dir,
                                 covfile_path,
                                 batch_respfile_path,
                                 func=func,
+                                alg=alg,
                                 **kwargs)
                     job_id = qsub_nm(job_path=batch_job_path,
                                      log_path=log_path,
@@ -174,8 +178,10 @@ def execute_nm(processing_dir,
                                   covfile_path,
                                   batch_respfile_path,
                                   func=func,
+                                  alg=alg,
                                   memory=memory,
                                   duration=duration,
+                                  account=account,
                                   **kwargs)
                     sbatch_nm(job_path=batch_job_path,
                               log_path=log_path)
@@ -201,6 +207,7 @@ def execute_nm(processing_dir,
                                 covfile_path,
                                 batch_respfile_path,
                                 func=func,
+                                alg=alg,
                                 **kwargs)
                     job_id = qsub_nm(job_path=batch_job_path,
                                      log_path=log_path,
@@ -214,7 +221,9 @@ def execute_nm(processing_dir,
                                   batch_job_name,
                                   covfile_path,
                                   batch_respfile_path,
+                                  account=account,
                                   func=func,
+                                  alg=alg,
                                   memory=memory,
                                   duration=duration,
                                   **kwargs)
@@ -243,6 +252,7 @@ def execute_nm(processing_dir,
                                 covfile_path,
                                 batch_respfile_path,
                                 func=func,
+                                alg=alg,
                                 **kwargs)
                     job_id = qsub_nm(job_path=batch_job_path,
                                      log_path=log_path,
@@ -256,7 +266,9 @@ def execute_nm(processing_dir,
                                   batch_job_name,
                                   covfile_path,
                                   batch_respfile_path,
+                                  account=account,
                                   func=func,
+                                  alg=alg,
                                   memory=memory,
                                   duration=duration,
                                   **kwargs)
@@ -1059,6 +1071,8 @@ def sbatchwrap_nm(processing_dir,
                   respfile_path,
                   memory,
                   duration,
+                  account,
+                  venv_path=None,
                   func='estimate',
                   **kwargs):
     '''This function wraps normative modelling into a bash script to run it
@@ -1098,13 +1112,20 @@ def sbatchwrap_nm(processing_dir,
 
     sbatch_init = '#!/bin/bash\n'
     sbatch_jobname = '#SBATCH --job-name=' + processing_dir + '\n'
-    sbatch_account = '#SBATCH --account=p33_norment\n'
+    sbatch_account = '#SBATCH --account='+account+'\n'
     sbatch_nodes = '#SBATCH --nodes=1\n'
     sbatch_tasks = '#SBATCH --ntasks=1\n'
     sbatch_time = '#SBATCH --time=' + str(duration) + '\n'
     sbatch_memory = '#SBATCH --mem-per-cpu=' + str(memory) + '\n'
-    sbatch_module = 'module purge\n'
-    sbatch_anaconda = 'module load anaconda3\n'
+    # sbatch_module = 'module purge\n'
+    if os.path.exists(venv_path):
+        if 'bin/activate' in venv_path:
+            sbatch_venv = f'source {venv_path}\n'
+        else:
+            sbatch_venv = f"source {os.path.join(venv_path,'bin/activate')}\n"
+    else:
+        sbatch_venv = '\n'
+    
     sbatch_exit = 'set -o errexit\n'
 
     # echo -n "This script is running on "
@@ -1116,8 +1137,8 @@ def sbatchwrap_nm(processing_dir,
                         sbatch_nodes +
                         sbatch_tasks +
                         sbatch_time +
-                        sbatch_module +
-                        sbatch_anaconda]
+                        sbatch_memory +
+                        sbatch_venv]
 
     # creates call of function for normative modelling
     if (testrespfile_path is not None) and (testcovfile_path is not None):
