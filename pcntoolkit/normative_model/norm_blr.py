@@ -222,6 +222,7 @@ class NormBLR(NormBase):
         theta = self.theta  # always use the estimated coefficients
         # remove from kwargs to avoid downstream problems
         kwargs.pop('theta', None)
+        model_index = kwargs.pop('model_index',None)
 
         Phis = create_poly_basis(Xs, self._model_order)
 
@@ -298,6 +299,7 @@ class NormBLR(NormBase):
             yhat, s2 = self.blr.predict_and_adjust(theta, Phi_adapt, y_adapt, Phis,
                                                    var_groups_test=var_groups_te,
                                                    var_groups_adapt=var_groups_ad,
+                                                   model_index=model_index,
                                                    **kwargs)
 
         return yhat, s2

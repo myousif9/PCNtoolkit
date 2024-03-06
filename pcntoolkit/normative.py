@@ -820,13 +820,19 @@ def predict(covfile, respfile, maskfile=None, **kwargs):
 
     # estimate the models for all variabels
     # TODO Z-scores adaptation for SHASH HBR
+    
+    num_models = len(models)
+    
     for i, m in enumerate(models):
         print("Prediction by model ", i+1, "of", feature_num)
         nm = norm_init(Xz)
         nm = nm.load(os.path.join(model_path, 'NM_' + str(fold) + '_' +
                                   str(m) + inputsuffix + '.pkl'))
+        
+        model_index = None if num_models == 1 else i
+
         if (alg != 'hbr' or nm.configs['transferred'] == False):
-            yhat, s2 = nm.predict(Xz, **kwargs)
+            yhat, s2 = nm.predict(Xz, model_index=model_index, **kwargs)
         else:
             tsbefile = kwargs.get('tsbefile')
             batch_effects_test = fileio.load(tsbefile)
@@ -1075,7 +1081,7 @@ def transfer(covfile, respfile, testcov=None, testresp=None, maskfile=None,
                                      str(i) + outputsuffix + '.pkl'))
 
             if testcov is not None:
-                yhat, s2 = nm.predict_on_new_sites(Xte, batch_effects_test)
+                yhat, s2 = nm.predict_on_new_sites(Xte, batch_effects_test, model_index=i)
 
         # We basically use normative.predict script here.
         if alg == 'blr':

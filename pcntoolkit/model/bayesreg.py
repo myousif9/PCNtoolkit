@@ -532,6 +532,11 @@ class BLR:
                 raise ValueError('ys is specified but has insufficent length')
             N = ys.shape[0]
 
+        model_index = kwargs.pop('model_index',None)
+
+        if model_index != None:
+            y = y[:,model_index]
+
         if var_groups_test is None:
             var_groups_test = np.ones(N)
             var_groups_adapt = np.ones(X.shape[0])
